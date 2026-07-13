@@ -1,4 +1,4 @@
-import { useState, useMemo, type ReactElement } from 'react'
+import { useState, useMemo } from 'react'
 import {
   AppShell,
   SidebarProvider,
@@ -43,11 +43,18 @@ import {
   CartesianGrid,
 } from 'recharts'
 import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@qijenchen/design-system'
+import {
   Layers,
   Monitor,
   BookOpen,
   MessageSquare,
   Settings2,
+  MoreHorizontal,
   Server,
 } from 'lucide-react'
 
@@ -112,14 +119,37 @@ function AppSidebar({ activeApp, onAppChange }: { activeApp: AppId; onAppChange:
 }
 
 // ── PageHeader ────────────────────────────────────────────────────────────────
+// Two-row header: title row + fixed tabs strip below
 
-function PageHeader({ title, rightSlot }: { title: string; rightSlot?: ReactElement<any, any> }) {
+function PageHeader({ title }: { title: string }) {
   return (
-    <ChromeHeader className="bg-surface">
-      <SidebarTrigger />
-      <h1 className="text-body-lg font-medium">{title}</h1>
-      {rightSlot}
-    </ChromeHeader>
+    <div className="flex flex-col border-b border-divider bg-surface">
+      {/* Row 1: toggle / title / actions */}
+      <ChromeHeader className="border-b-0">
+        <SidebarTrigger />
+        <h1 className="text-body-lg font-medium flex-1">{title}</h1>
+        {/* Gear icon (settings) */}
+        <Button variant="tertiary" size="sm" startIcon={Settings2} aria-label="跨平台設定" />
+        {/* "..." dropdown: 說明文件 + 意見回饋 */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="tertiary" size="sm" startIcon={MoreHorizontal} aria-label="更多功能" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem startIcon={BookOpen}>說明文件</DropdownMenuItem>
+            <DropdownMenuItem startIcon={MessageSquare}>意見回饋</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </ChromeHeader>
+      {/* Row 2: fixed tabs strip */}
+      <div className="px-4">
+        <TabsList>
+          <TabsTrigger value="reports">使用報表</TabsTrigger>
+          <TabsTrigger value="quota">配額管理</TabsTrigger>
+          <TabsTrigger value="records">申請記錄</TabsTrigger>
+        </TabsList>
+      </div>
+    </div>
   )
 }
 
@@ -489,24 +519,7 @@ export default function App() {
           <AppShell
             layout="primary-sidebar"
             sidebar={<AppSidebar activeApp={activeApp} onAppChange={setActiveApp} />}
-            header={
-              <PageHeader
-                title={appLabel}
-                rightSlot={
-                  <div className="flex items-center gap-1 ml-auto">
-                    <TabsList>
-                      <TabsTrigger value="reports">使用報表</TabsTrigger>
-                      <TabsTrigger value="quota">配額管理</TabsTrigger>
-                      <TabsTrigger value="records">申請記錄</TabsTrigger>
-                    </TabsList>
-                    <div className="w-px h-5 bg-divider mx-2" />
-                    <Button variant="tertiary" size="sm" startIcon={BookOpen}>說明文件</Button>
-                    <Button variant="tertiary" size="sm" startIcon={MessageSquare}>意見回饋</Button>
-                    <Button variant="secondary" size="sm" startIcon={Settings2}>跨平台設定</Button>
-                  </div>
-                }
-              />
-            }
+            header={<PageHeader title={appLabel} />}
           >
             <div className="px-[var(--layout-space-loose)] py-[var(--layout-space-loose)]">
               <TabsContent value="reports">
