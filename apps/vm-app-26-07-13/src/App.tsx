@@ -370,18 +370,20 @@ const appRecords: AppRecord[] = [
 interface QuotaRecord {
   date: string
   type: 'add' | 'use' | 'expire'
+  scope: '個人' | '部門'
   description: string
   delta: number
   balance: number
-  days: number
 }
 
 const quotaRecords: QuotaRecord[] = [
-  { date: '2026-07-10', type: 'use', description: 'GPT-4o 申請 #REQ-0041', delta: -200, balance: 1240, days: 3 },
-  { date: '2026-07-08', type: 'add', description: '月度配額重置', delta: 2000, balance: 1440, days: 5 },
-  { date: '2026-06-30', type: 'expire', description: '6 月未使用點數到期', delta: -560, balance: 0, days: 13 },
-  { date: '2026-06-25', type: 'use', description: 'Claude 3 Haiku 申請 #REQ-0028', delta: -150, balance: 560, days: 18 },
-  { date: '2026-06-08', type: 'add', description: '主管補充配額', delta: 500, balance: 710, days: 35 },
+  { date: '2026-07-10', type: 'use', scope: '個人', description: 'GPT-4o 申請 #REQ-0041', delta: -200, balance: 1240 },
+  { date: '2026-07-08', type: 'add', scope: '個人', description: '月度個人配額重置', delta: 2000, balance: 1440 },
+  { date: '2026-07-06', type: 'use', scope: '部門', description: 'Claude 3.5 部門用量扣除', delta: -800, balance: 5170 },
+  { date: '2026-07-01', type: 'add', scope: '部門', description: '月度部門配額重置', delta: 10000, balance: 5970 },
+  { date: '2026-06-30', type: 'expire', scope: '個人', description: '6 月未使用點數到期', delta: -560, balance: 0 },
+  { date: '2026-06-25', type: 'use', scope: '個人', description: 'Claude 3 Haiku 申請 #REQ-0028', delta: -150, balance: 560 },
+  { date: '2026-06-08', type: 'add', scope: '部門', description: '主管補充部門配額', delta: 500, balance: 710 },
 ]
 
 const statusBadgeClass: Record<AppRecord['status'], string> = {
@@ -420,8 +422,21 @@ const appColumns = [
 const quotaColHelper = createColumnHelper<QuotaRecord>()
 const quotaColumns = [
   quotaColHelper.accessor('date', { header: '日期' }),
+  quotaColHelper.accessor('scope', {
+    header: '配額類型',
+    cell: (i) => {
+      const s = i.getValue()
+      return (
+        <span className={`text-caption font-semibold px-2 py-0.5 rounded-full ${
+          s === '部門'
+            ? 'bg-[color:var(--color-purple-subtle,#f3eefb)] text-[color:var(--color-purple,#7c3aed)]'
+            : 'bg-[color:var(--color-primary-subtle)] text-[color:var(--color-primary)]'
+        }`}>{s}</span>
+      )
+    },
+  }),
   quotaColHelper.accessor('type', {
-    header: '類型',
+    header: '異動類型',
     cell: (i) => {
       const t = i.getValue()
       return <span className={`text-caption font-semibold px-2 py-0.5 rounded-full ${typeBadgeClass[t]}`}>{typeLabel[t]}</span>
@@ -442,66 +457,78 @@ const quotaColumns = [
   quotaColHelper.accessor('balance', { header: '餘額', cell: (i) => <span className="tabular-nums">{i.getValue().toLocaleString()}</span> }),
 ]
 
-const typeFilterOptions = [
-  { value: '', label: '所有類型' },
-  { value: 'add', label: '點數增加' },
-  { value: 'use', label: '點數使用' },
-  { value: 'expire', label: '點數到期' },
+const scopeFilterOptions = [
+  { value: '', label: '全部' },
+  { value: '部門', label: '部門' },
+  { value: '個人', label: '個人' },
 ]
-const rangeFilterOptions = [
-  { value: '', label: '所有時間' },
-  { value: '7', label: '近 7 天' },
-  { value: '30', label: '近 30 天' },
-  { value: '90', label: '近 90 天' },
-]
+
+type RecordView = 'app' | 'quota'
 
 function RecordsTab() {
-  const [typeFilter, setTypeFilter] = useState('')
-  const [rangeFilter, setRangeFilter] = useState('')
+  const [view, setView] = useState<RecordView>('app')
+  const [scopeFilter, setScopeFilter] = useState('')
 
-  const filteredQuota = useMemo(() => {
-    return quotaRecords.filter((r) => {
-      const typeOk = !typeFilter || r.type === typeFilter
-      const rangeOk = !rangeFilter || r.days <= parseInt(rangeFilter)
-      return typeOk && rangeOk
-    })
-  }, [typeFilter, rangeFilter])
+  const filteredQuota = useMemo(
+    () => quotaRecords.filter((r) => !scopeFilter || r.scope === scopeFilter),
+    [scopeFilter],
+  )
 
   return (
-    <div className="space-y-6">
-      {/* Table 1: no filter */}
-      <div className="rounded-lg border border-divider bg-surface overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-divider">
-          <p className="text-body font-semibold text-foreground">模型申請記錄</p>
-          <p className="text-caption text-fg-muted">所有已提交的模型使用申請</p>
-        </div>
-        <DataTable columns={appColumns as any} data={appRecords} />
+    <div className="flex flex-col gap-4">
+      {/* Table switcher */}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setView('app')}
+          className={`text-body px-3 py-1.5 rounded-md transition-colors ${
+            view === 'app'
+              ? 'bg-surface-raised font-semibold text-foreground'
+              : 'text-fg-secondary hover:text-foreground'
+          }`}
+        >
+          模型申請記錄
+        </button>
+        <button
+          onClick={() => setView('quota')}
+          className={`text-body px-3 py-1.5 rounded-md transition-colors ${
+            view === 'quota'
+              ? 'bg-surface-raised font-semibold text-foreground'
+              : 'text-fg-secondary hover:text-foreground'
+          }`}
+        >
+          配額異動明細
+        </button>
       </div>
 
-      {/* Table 2: with 2 filters */}
-      <div className="rounded-lg border border-divider bg-surface overflow-hidden">
-        <div className="px-5 py-3.5 border-b border-divider flex items-center justify-between gap-3">
-          <div>
-            <p className="text-body font-semibold text-foreground">配額異動明細</p>
-            <p className="text-caption text-fg-muted">點數異動與到期記錄</p>
+      {/* Table 1: 模型申請記錄（no filter） */}
+      {view === 'app' && (
+        <div className="rounded-lg border border-divider bg-surface overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-divider">
+            <p className="text-body font-semibold text-foreground">模型申請記錄</p>
+            <p className="text-caption text-fg-muted">所有已提交的模型使用申請</p>
           </div>
-          <div className="flex items-center gap-2">
-            <Select
-              options={typeFilterOptions}
-              value={typeFilter}
-              onChange={setTypeFilter}
-              aria-label="篩選類型"
-            />
-            <Select
-              options={rangeFilterOptions}
-              value={rangeFilter}
-              onChange={setRangeFilter}
-              aria-label="篩選時間範圍"
-            />
-          </div>
+          <DataTable columns={appColumns as any} data={appRecords} />
         </div>
-        <DataTable columns={quotaColumns as any} data={filteredQuota} />
-      </div>
+      )}
+
+      {/* Table 2: 配額異動明細（scope filter） */}
+      {view === 'quota' && (
+        <div className="rounded-lg border border-divider bg-surface overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-divider flex items-center justify-between gap-3">
+            <div>
+              <p className="text-body font-semibold text-foreground">配額異動明細</p>
+              <p className="text-caption text-fg-muted">點數異動與到期記錄</p>
+            </div>
+            <Select
+              options={scopeFilterOptions}
+              value={scopeFilter}
+              onChange={setScopeFilter}
+              aria-label="篩選配額類型"
+            />
+          </div>
+          <DataTable columns={quotaColumns as any} data={filteredQuota} />
+        </div>
+      )}
     </div>
   )
 }
