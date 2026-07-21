@@ -1,0 +1,886 @@
+<title>部門預算管理系統</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#F4F6FA;--surface:#FFF;--surface-2:#EDF0F7;--border:#D6DCE8;--border-light:#E8EBF3;
+    --text-1:#0F1C35;--text-2:#4A5568;--text-3:#8A96AA;
+    --accent:#2463EB;--accent-light:#93C5FD;--accent-bg:#EEF3FD;
+    --purple:#7C3AED;--warn:#D97706;--warn-bg:#FEF3C7;--good:#059669;--good-bg:#ECFDF5;
+    --wallet-accent:#2463EB;--wallet-accent-bg:#EEF3FD;
+    --shadow:0 1px 3px rgba(15,28,53,.06),0 1px 2px rgba(15,28,53,.04);
+    --shadow-md:0 4px 16px rgba(15,28,53,.12);--radius:10px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif}
+  @media(prefers-color-scheme:dark){:root{
+    --bg:#0C1220;--surface:#141E30;--surface-2:#1B2638;--border:#263048;--border-light:#1F2D44;
+    --text-1:#EDF2FC;--text-2:#8FA3C0;--text-3:#55697F;
+    --accent:#4D80F0;--accent-light:#93C5FD;--accent-bg:#1A2845;
+    --purple:#9F67F5;--warn:#F59E0B;--warn-bg:#2A1E07;--good:#10B981;--good-bg:#062B1A;
+    --shadow:0 1px 3px rgba(0,0,0,.3);--shadow-md:0 4px 16px rgba(0,0,0,.4)}}
+  :root[data-theme="light"]{--bg:#F4F6FA;--surface:#FFF;--surface-2:#EDF0F7;--border:#D6DCE8;--border-light:#E8EBF3;--text-1:#0F1C35;--text-2:#4A5568;--text-3:#8A96AA;--accent:#2463EB;--accent-light:#93C5FD;--accent-bg:#EEF3FD;--purple:#7C3AED;--warn:#D97706;--warn-bg:#FEF3C7;--good:#059669;--good-bg:#ECFDF5;--shadow:0 1px 3px rgba(15,28,53,.06);--shadow-md:0 4px 16px rgba(15,28,53,.12)}
+  :root[data-theme="dark"]{--bg:#0C1220;--surface:#141E30;--surface-2:#1B2638;--border:#263048;--border-light:#1F2D44;--text-1:#EDF2FC;--text-2:#8FA3C0;--text-3:#55697F;--accent:#4D80F0;--accent-light:#93C5FD;--accent-bg:#1A2845;--purple:#9F67F5;--warn:#F59E0B;--warn-bg:#2A1E07;--good:#10B981;--good-bg:#062B1A;--shadow:0 1px 3px rgba(0,0,0,.3);--shadow-md:0 4px 16px rgba(0,0,0,.4)}
+  html{font-size:15px}
+  body{font-family:var(--font);background:var(--bg);color:var(--text-1);min-height:100vh;line-height:1.5}
+
+  /* ── Role bar ── */
+  .role-bar{height:36px;display:flex;align-items:center;padding:0 28px;gap:16px;font-size:.72rem;position:sticky;top:0;z-index:300;transition:background .25s}
+  .role-bar-lbl{font-size:.63rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;opacity:.45;flex-shrink:0}
+  .role-switcher{display:flex;gap:3px}
+  .role-btn{font-family:var(--font);font-size:.7rem;font-weight:600;padding:3px 11px;border-radius:100px;cursor:pointer;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.07);color:rgba(255,255,255,.5);transition:all .15s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+  .role-btn:hover{background:rgba(255,255,255,.15);color:rgba(255,255,255,.8)}
+  .role-btn.active{background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.3)}
+  .role-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+  .role-scope{margin-left:auto;font-size:.67rem;opacity:.4;font-style:italic}
+
+  /* ── Header ── */
+  .site-header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;justify-content:space-between;height:54px;position:sticky;top:36px;z-index:200;box-shadow:var(--shadow)}
+  .header-left{display:flex;align-items:center;gap:11px}
+  .logo-mark{width:32px;height:32px;background:var(--wallet-accent);border-radius:8px;display:flex;align-items:center;justify-content:center;transition:background .25s;flex-shrink:0}
+  .logo-mark svg{width:15px;height:15px;color:#fff}
+  .site-title{font-size:.88rem;font-weight:700;letter-spacing:-.01em}
+  .site-subtitle{font-size:.71rem;color:var(--text-3);margin-top:1px}
+  .theme-btn{width:32px;height:32px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text-2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.9rem}
+  .theme-btn:hover{background:var(--border)}
+
+  /* ── Wallet nav ── */
+  .wallet-nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:stretch;gap:2px;position:sticky;top:90px;z-index:190}
+  .wallet-tab{display:flex;align-items:center;gap:7px;padding:0 18px;height:40px;cursor:pointer;font-size:.79rem;font-weight:600;color:var(--text-3);border-bottom:2px solid transparent;margin-bottom:-1px;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font);white-space:nowrap;transition:color .15s,border-color .15s}
+  .wallet-tab:hover{color:var(--text-1)}
+  .wallet-tab.active{color:var(--wallet-accent);border-bottom-color:var(--wallet-accent)}
+  .wallet-icon{width:19px;height:19px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.63rem;font-weight:800;color:#fff;flex-shrink:0}
+
+  /* ── View nav ── */
+  .view-nav{padding:13px 28px 0;display:flex;align-items:center;gap:4px;border-bottom:1px solid var(--border-light);background:var(--bg);position:sticky;top:130px;z-index:180}
+  .view-tab{padding:5px 15px;border-radius:7px 7px 0 0;cursor:pointer;font-size:.77rem;font-weight:600;color:var(--text-3);background:none;border:1px solid transparent;border-bottom:none;font-family:var(--font);transition:all .15s;margin-bottom:-1px}
+  .view-tab:hover{color:var(--text-1);background:var(--surface-2)}
+  .view-tab.active{color:var(--text-1);background:var(--surface);border-color:var(--border-light);border-bottom-color:var(--surface)}
+
+  /* ── Action bar ── */
+  .action-bar{background:var(--surface);border-bottom:1px solid var(--border-light);padding:8px 28px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;position:sticky;top:176px;z-index:170}
+  .action-bar.hidden{display:none}
+  .ab-label{font-size:.68rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);flex-shrink:0}
+  .ab-sep{width:1px;height:18px;background:var(--border);flex-shrink:0}
+  .ab-balance{margin-left:auto;font-size:.7rem;color:var(--text-3);background:var(--surface-2);border:1px solid var(--border-light);padding:3px 11px;border-radius:100px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .abn{font-weight:700;color:var(--text-1)}
+  .action-btn{font-family:var(--font);font-size:.75rem;font-weight:600;padding:5px 13px;border-radius:7px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:all .15s}
+  .ab-primary{background:var(--wallet-accent);color:#fff;border:none}
+  .ab-primary:hover{filter:brightness(1.08)}
+  .ab-outline{background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+  .ab-outline:hover{background:var(--border);color:var(--text-1)}
+
+  /* ── Content ── */
+  .main{padding:22px 28px;max-width:1280px;margin:0 auto}
+  .view-panel{display:none}.view-panel.active{display:block}
+
+  /* ── Section labels ── */
+  .section-label{display:flex;align-items:center;gap:10px;margin-bottom:13px}
+  .section-stripe{width:4px;height:19px;border-radius:2px}
+  .section-label h2{font-size:.77rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)}
+  .section-eq{margin-left:auto;font-size:.69rem;color:var(--text-3);background:var(--surface-2);border:1px solid var(--border-light);padding:2px 10px;border-radius:100px}
+
+  /* ── Chart panels ── */
+  .chart-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:22px;overflow:hidden}
+  .chart-inner{display:grid;grid-template-columns:1fr 1px 1fr;padding:20px 24px;align-items:center}
+  .chart-divider-v{background:var(--border-light);align-self:stretch;margin:0 20px}
+  .bar-chart-wrap{display:flex;flex-direction:column;gap:13px}
+  .bar-group{display:flex;flex-direction:column;gap:5px}
+  .bar-group-label{font-size:.67rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text-3)}
+  .stacked-bar{display:flex;height:40px;border-radius:8px;overflow:hidden}
+  .bar-seg{display:flex;align-items:center;justify-content:center;font-size:.66rem;font-weight:700;color:#fff;white-space:nowrap;padding:0 7px;transition:filter .15s}
+  .bar-seg:hover{filter:brightness(1.08)}
+  .bar-seg-label{display:flex;flex-direction:column;align-items:center;gap:1px}
+  .bar-seg-name{font-size:.58rem;font-weight:600;opacity:.85}
+  .bar-seg-val{font-size:.7rem;font-weight:700;font-variant-numeric:tabular-nums}
+  .legend-row{display:flex;gap:13px;flex-wrap:wrap;margin-top:3px}
+  .legend-item{display:flex;align-items:center;gap:4px;font-size:.67rem;color:var(--text-2)}
+  .legend-swatch{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+  .chart-stats{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .stat-item{background:var(--surface-2);border:1px solid var(--border-light);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+  .stat-index{font-size:.61rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3)}
+  .stat-label{font-size:.69rem;color:var(--text-2)}
+  .stat-val{font-size:1.08rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em;color:var(--text-1);margin-top:2px}
+  .stat-unit{font-size:.67rem;font-weight:400;color:var(--text-3)}
+  .stat-badge{font-size:.61rem;font-weight:600;padding:2px 6px;border-radius:100px;display:inline-block;width:fit-content;margin-top:2px}
+  .div-chart{display:flex;flex-direction:column;gap:8px}
+  .div-row{display:flex;align-items:center;gap:9px}
+  .div-name{font-size:.72rem;font-weight:600;width:50px;text-align:right;flex-shrink:0}
+  .div-bar-wrap{flex:1;height:25px;border-radius:6px;overflow:hidden;display:flex}
+  .div-bar-seg{height:100%;transition:filter .15s;display:flex;align-items:center;justify-content:flex-end;padding-right:6px}
+  .div-bar-seg:hover{filter:brightness(1.08)}
+  .div-bar-seg span{font-size:.62rem;font-weight:700;color:rgba(255,255,255,.85);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .div-pct{font-size:.67rem;font-weight:700;color:var(--text-2);width:32px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+  .div-legend{display:flex;gap:12px;margin-top:6px;padding-top:10px;border-top:1px solid var(--border-light);flex-wrap:wrap}
+
+  /* ── Tables ── */
+  .table-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .table-toolbar{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border-light);gap:12px;flex-wrap:wrap}
+  .toolbar-title{font-size:.82rem;font-weight:700}
+  .toolbar-controls{display:flex;align-items:center;gap:9px}
+  .filter-select{font-family:var(--font);font-size:.77rem;color:var(--text-1);background:var(--surface-2);border:1px solid var(--border);border-radius:7px;padding:5px 25px 5px 10px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%238A96AA' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;cursor:pointer}
+  .export-btn{font-family:var(--font);font-size:.75rem;font-weight:600;color:var(--accent);background:var(--accent-bg);border:1px solid transparent;border-radius:7px;padding:5px 12px;cursor:pointer}
+  .export-btn:hover{background:var(--border)}
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.79rem}
+  thead th{text-align:left;font-size:.65rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text-3);padding:9px 15px;background:var(--surface-2);border-bottom:1px solid var(--border);white-space:nowrap}
+  thead th.num{text-align:right}
+  tbody tr{border-bottom:1px solid var(--border-light);transition:background .1s}
+  tbody tr:last-child{border-bottom:none}
+  tbody tr:hover{background:var(--surface-2)}
+  tbody td{padding:11px 15px;color:var(--text-1);vertical-align:middle;font-variant-numeric:tabular-nums}
+  tbody td.num{text-align:right}
+  .dept-pill{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:.77rem}
+  .dept-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .pending-tag{display:inline-block;font-size:.62rem;font-weight:600;color:var(--warn);background:var(--warn-bg);padding:1px 5px;border-radius:4px;margin-left:4px;white-space:nowrap}
+  .balance-pos{color:var(--good);font-weight:600}
+  .balance-low{color:var(--warn);font-weight:600}
+  .balance-neg{color:#EF4444;font-weight:600}
+  .tfoot-row td{font-weight:700;background:var(--surface-2);border-top:2px solid var(--border);padding:11px 15px;font-variant-numeric:tabular-nums}
+  .status-badge{display:inline-flex;align-items:center;font-size:.63rem;font-weight:600;padding:2px 7px;border-radius:100px;white-space:nowrap}
+  .badge-completed,.badge-approved{background:var(--good-bg);color:var(--good)}
+  .badge-pending{background:var(--warn-bg);color:var(--warn)}
+  .badge-rejected,.badge-failed{background:#FEE2E2;color:#DC2626}
+
+  /* ── Bill view ── */
+  .bill-header{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+  .bill-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:3px;position:relative;overflow:hidden}
+  .bill-kpi::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--wallet-accent);border-radius:3px 0 0 3px}
+  .bill-kpi-label{font-size:.69rem;color:var(--text-2)}
+  .bill-kpi-val{font-size:1.3rem;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+  .bill-kpi-sub{font-size:.67rem;color:var(--text-3)}
+  .status-paid{background:var(--good-bg);color:var(--good)}
+  .status-pending{background:var(--warn-bg);color:var(--warn)}
+  .status-upcoming{background:var(--surface-2);color:var(--text-3)}
+
+  /* ── Ledger view ── */
+  .ledger-filters{display:flex;gap:9px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+  .ledger-filters label{font-size:.72rem;color:var(--text-3);white-space:nowrap}
+
+  /* ── Modal ── */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:600;opacity:0;pointer-events:none;transition:opacity .18s}
+  .modal-overlay.open{opacity:1;pointer-events:auto}
+  .modal-box{background:var(--surface);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.22);width:90%;max-width:500px;max-height:86vh;overflow-y:auto;display:flex;flex-direction:column}
+  .modal-header{display:flex;align-items:center;justify-content:space-between;padding:15px 20px;border-bottom:1px solid var(--border-light);flex-shrink:0}
+  .modal-title{font-size:.88rem;font-weight:700}
+  .modal-close{width:27px;height:27px;border-radius:50%;background:var(--surface-2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text-2);font-size:.8rem;font-family:var(--font)}
+  .modal-close:hover{background:var(--border)}
+  .modal-body{padding:18px 20px;flex:1;overflow-y:auto}
+  .modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:13px 20px;border-top:1px solid var(--border-light);flex-shrink:0}
+  .form-group{margin-bottom:13px}
+  .form-label{font-size:.71rem;font-weight:600;color:var(--text-2);margin-bottom:4px;display:block}
+  .form-input,.form-select{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-family:var(--font);font-size:.8rem;background:var(--surface);color:var(--text-1);transition:border-color .15s}
+  .form-input:focus,.form-select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+  .form-select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%238A96AA' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center;padding-right:26px}
+  .form-textarea{width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;font-family:var(--font);font-size:.8rem;background:var(--surface);color:var(--text-1);resize:vertical;min-height:72px}
+  .form-textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+  .modal-balance{display:flex;justify-content:space-between;align-items:center;background:var(--surface-2);border:1px solid var(--border-light);border-radius:8px;padding:9px 13px;margin-bottom:14px;font-size:.75rem}
+  .modal-balance-label{color:var(--text-3)}
+  .modal-balance-val{font-weight:700;color:var(--text-1);font-variant-numeric:tabular-nums}
+  .multi-rows{display:flex;flex-direction:column;gap:7px;margin-bottom:7px}
+  .multi-row{display:flex;gap:6px;align-items:center}
+  .multi-row .form-input,.multi-row .form-select{margin:0;flex:1}
+  .multi-row-del{flex-shrink:0;width:27px;height:27px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--text-3);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-family:var(--font)}
+  .multi-row-del:hover{background:#FEE2E2;border-color:#FECACA;color:#DC2626}
+  .add-row-btn{width:100%;padding:6px;background:none;border:1px dashed var(--border);border-radius:7px;cursor:pointer;font-family:var(--font);font-size:.74rem;color:var(--text-3);transition:all .15s}
+  .add-row-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-bg)}
+  .modal-tabs{display:flex;gap:3px;margin-bottom:14px;background:var(--surface-2);border-radius:8px;padding:3px}
+  .modal-tab-btn{flex:1;padding:6px;border-radius:6px;font-size:.77rem;font-weight:600;color:var(--text-3);cursor:pointer;background:none;border:none;font-family:var(--font);transition:all .15s}
+  .modal-tab-btn.active{background:var(--surface);color:var(--text-1);box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .btn{font-family:var(--font);font-size:.78rem;font-weight:600;border-radius:8px;padding:7px 17px;cursor:pointer;border:none;transition:all .15s}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:hover{filter:brightness(1.08)}
+  .btn-cancel{background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
+  .btn-cancel:hover{background:var(--border)}
+  .btn-approve{background:var(--good);color:#fff;font-size:.68rem;padding:3px 10px;border-radius:6px;cursor:pointer;border:none;font-family:var(--font);font-weight:600}
+  .btn-reject{background:#EF4444;color:#fff;font-size:.68rem;padding:3px 10px;border-radius:6px;cursor:pointer;border:none;font-family:var(--font);font-weight:600}
+  .form-hint{font-size:.71rem;color:var(--text-3);margin-bottom:12px;line-height:1.55}
+  .form-warn{font-size:.72rem;color:var(--warn);background:var(--warn-bg);padding:8px 11px;border-radius:7px;margin-bottom:12px;display:none}
+  .form-warn.show{display:block}
+
+  /* ── Toast ── */
+  .toast{position:fixed;bottom:26px;right:26px;padding:10px 16px;border-radius:9px;font-size:.77rem;font-weight:500;z-index:700;opacity:0;transform:translateY(6px);transition:all .22s;pointer-events:none;max-width:280px;color:#fff}
+  .toast.show{opacity:1;transform:translateY(0)}
+  .toast-success{background:var(--good)}
+  .toast-error{background:#EF4444}
+  .toast-info{background:var(--text-1)}
+
+  .ledger-new-btn{font-family:var(--font);font-size:.75rem;font-weight:600;background:var(--wallet-accent);color:#fff;border:none;border-radius:7px;padding:5px 13px;cursor:pointer}
+  .ledger-new-btn:hover{filter:brightness(1.08)}
+
+  @media(max-width:860px){.chart-inner{grid-template-columns:1fr}.chart-divider-v{display:none}.bill-header{grid-template-columns:1fr 1fr}}
+</style>
+
+<!-- Role bar -->
+<div class="role-bar" id="roleBar">
+  <span class="role-bar-lbl">身份</span>
+  <div class="role-switcher">
+    <button class="role-btn active" data-role="sys" onclick="switchRole('sys')"><span class="role-dot" style="background:#94A3B8"></span>系統管理員</button>
+    <button class="role-btn" data-role="div" onclick="switchRole('div')"><span class="role-dot" style="background:#38BDF8"></span>處管理員</button>
+    <button class="role-btn" data-role="dept" onclick="switchRole('dept')"><span class="role-dot" style="background:#34D399"></span>部管理員</button>
+  </div>
+  <div class="role-scope" id="roleScope">全系統總覽</div>
+</div>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="header-left">
+    <div class="logo-mark" id="logoMark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+    </div>
+    <div>
+      <div class="site-title">部門預算管理系統</div>
+      <div class="site-subtitle" id="headerSub">行政暨財務管理處 — 年度預算分配追蹤</div>
+    </div>
+  </div>
+  <button class="theme-btn" id="themeToggle">🌙</button>
+</header>
+
+<!-- Wallet nav -->
+<nav class="wallet-nav">
+  <button class="wallet-tab active" data-wallet="ai" onclick="switchWallet('ai')"><span class="wallet-icon" style="background:#2463EB">AI</span>AI 錢包</button>
+  <button class="wallet-tab" data-wallet="vm" onclick="switchWallet('vm')"><span class="wallet-icon" style="background:#7C3AED">VM</span>VM 錢包</button>
+</nav>
+
+<!-- View nav -->
+<div class="view-nav">
+  <button class="view-tab active" data-view="alloc" onclick="switchView('alloc')">配比資源</button>
+  <button class="view-tab" data-view="mgmt" onclick="switchView('mgmt')">資源管理</button>
+  <button class="view-tab" data-view="ledger" onclick="switchView('ledger')">申請單據</button>
+</div>
+
+<!-- Action bar (配比資源 only, role-specific) -->
+<div class="action-bar" id="actionBar"></div>
+
+<!-- Content -->
+<main class="main">
+
+  <!-- 配比資源 -->
+  <div class="view-panel active" id="panel-alloc">
+    <div class="section-label">
+      <div class="section-stripe" style="background:var(--wallet-accent)"></div>
+      <h2>部門手上資源</h2>
+      <div class="section-eq">① 年度總額 ＋ ② 累積追加 ＝ ③ 已分配 ＋ ④ 未分配餘額</div>
+    </div>
+    <div class="chart-panel"><div class="chart-inner">
+      <div class="bar-chart-wrap">
+        <div class="bar-group"><div class="bar-group-label">來源（核准額度）</div><div class="stacked-bar" id="barSource"></div></div>
+        <div class="bar-group"><div class="bar-group-label">用途（資源分配）</div><div class="stacked-bar" id="barUse"></div></div>
+        <div class="legend-row" id="legendA"></div>
+      </div>
+      <div class="chart-divider-v"></div>
+      <div class="chart-stats" id="statsA"></div>
+    </div></div>
+
+    <div class="section-label">
+      <div class="section-stripe" style="background:var(--purple)"></div>
+      <h2 id="sectionBLabel">各處使用狀況</h2>
+      <div class="section-eq">① 年度總預算 ＋ ② 累積追加 ＝ ③ 已下發至部 ＋ ④ 各處餘額</div>
+    </div>
+    <div class="chart-panel"><div class="chart-inner">
+      <div><div class="div-chart" id="divChart"></div><div class="div-legend" id="legendB"></div></div>
+      <div class="chart-divider-v"></div>
+      <div class="chart-stats" id="statsB"></div>
+    </div></div>
+
+    <div class="table-section">
+      <div class="table-toolbar">
+        <div class="toolbar-title" id="tableTitle">各處年度預算明細</div>
+        <div class="toolbar-controls">
+          <select class="filter-select" id="yearFilter" onchange="renderAlloc()">
+            <option value="2025">2025 年度</option><option value="2024">2024 年度</option><option value="2023">2023 年度</option>
+          </select>
+          <button class="export-btn">匯出 CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th id="colUnit">處別</th>
+          <th class="num">年度總預算</th>
+          <th class="num">累計追加<br><span style="font-weight:400;letter-spacing:0;text-transform:none;font-size:.62rem">已核准 / 待審</span></th>
+          <th class="num" id="colSpent">已下發至部</th>
+          <th class="num">當前餘額</th>
+        </tr></thead>
+        <tbody id="tableBody"></tbody><tfoot id="tableFoot"></tfoot>
+      </table></div>
+      <div style="display:flex;align-items:center;gap:13px;padding:10px 18px;border-top:1px solid var(--border-light);flex-wrap:wrap">
+        <span style="font-size:.67rem;color:var(--text-3)">餘額狀態：</span>
+        <span class="legend-item" style="font-size:.65rem;color:var(--text-3)"><span class="legend-swatch" style="background:var(--good)"></span>充裕 ＞30%</span>
+        <span class="legend-item" style="font-size:.65rem;color:var(--text-3)"><span class="legend-swatch" style="background:var(--warn)"></span>偏低 10–30%</span>
+        <span class="legend-item" style="font-size:.65rem;color:var(--text-3)"><span class="legend-swatch" style="background:#EF4444"></span>不足 ＜10%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 資源管理 -->
+  <div class="view-panel" id="panel-mgmt">
+    <div class="bill-header" id="billHeader"></div>
+    <div class="table-section">
+      <div class="table-toolbar">
+        <div class="toolbar-title">月帳單</div>
+        <div class="toolbar-controls">
+          <select class="filter-select" id="billYearFilter" onchange="renderBill()">
+            <option value="2025">2025 年度</option><option value="2024">2024 年度</option>
+          </select>
+          <button class="export-btn">匯出 CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>帳單月份</th><th class="num">用量</th><th class="num">單價</th>
+          <th class="num">帳單金額</th><th class="num">累計金額</th><th>狀態</th>
+        </tr></thead>
+        <tbody id="billBody"></tbody><tfoot id="billFoot"></tfoot>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- 申請單據 -->
+  <div class="view-panel" id="panel-ledger">
+    <div class="table-section">
+      <div class="table-toolbar">
+        <div class="toolbar-title">申請單據紀錄</div>
+        <div class="toolbar-controls">
+          <select class="filter-select" id="ledgerTypeFilter" onchange="renderLedger()">
+            <option value="">所有類型</option>
+            <option value="alloc-div">存入處錢包</option>
+            <option value="alloc-dept">存入部錢包</option>
+            <option value="alloc-personal">存入個人錢包</option>
+            <option value="borrow">借調</option>
+            <option value="repay">歸還</option>
+            <option value="budget-req">追加預算申請</option>
+          </select>
+          <select class="filter-select" id="ledgerStatusFilter" onchange="renderLedger()">
+            <option value="">所有狀態</option>
+            <option value="completed">已完成</option>
+            <option value="pending">待審核</option>
+            <option value="approved">已核准</option>
+            <option value="rejected">已拒絕</option>
+            <option value="failed">餘額不足</option>
+          </select>
+          <button class="ledger-new-btn" onclick="openLedgerAction()">＋ 發起申請</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr>
+          <th>單號</th><th>日期時間</th><th>類型</th><th>錢包</th>
+          <th class="num">金額（萬）</th><th>對象 / WBS</th><th>備註</th><th>狀態</th><th>操作</th>
+        </tr></thead>
+        <tbody id="ledgerBody"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- Modal overlay -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal-box" id="modalBox">
+    <div class="modal-header">
+      <div class="modal-title" id="modalTitle"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Theme ──
+const html = document.documentElement;
+let theme = window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
+html.setAttribute('data-theme', theme);
+const themeBtn = document.getElementById('themeToggle');
+themeBtn.textContent = theme==='dark'?'☀️':'🌙';
+themeBtn.addEventListener('click',()=>{
+  theme = theme==='dark'?'light':'dark';
+  html.setAttribute('data-theme',theme);
+  themeBtn.textContent = theme==='dark'?'☀️':'🌙';
+  render();
+});
+
+// ── State ──
+let activeRole='sys', activeWallet='ai', activeView='alloc';
+
+const ROLES = {
+  sys:  { label:'系統管理員', scope:'全系統總覽',   barBg:'#0F172A', unitLabel:'處別', sectionB:'各處使用狀況',   tableTitle:'各處年度預算明細',   spentCol:'已下發至部', subtitle:'全系統 — 年度預算總覽' },
+  div:  { label:'處管理員',   scope:'第二處',        barBg:'#0C4A6E', unitLabel:'處別', sectionB:'本處各部使用狀況', tableTitle:'本處各部年度預算明細', spentCol:'已下發至部', subtitle:'第二處 — 年度預算分配追蹤' },
+  dept: { label:'部管理員',   scope:'資訊部',        barBg:'#064E3B', unitLabel:'部別', sectionB:'本部各科使用狀況', tableTitle:'本部各科年度預算明細', spentCol:'已使用金額', subtitle:'資訊部 — 年度預算使用追蹤' },
+};
+const WALLETS = {
+  ai: { accent:'#2463EB', accentBg:'#EEF3FD' },
+  vm: { accent:'#7C3AED', accentBg:'#F3EEFF' },
+};
+const DIV_COLORS = ['#2463EB','#7C3AED','#059669','#D97706','#DC2626','#0891B2'];
+const DIVISIONS = ['第一處','第二處','第三處','第四處','第五處','第六處'];
+const DEPARTMENTS = ['資訊部','企劃部','業務部','行政部'];
+const EMPLOYEES = [
+  {id:'E001',name:'王大明'},{id:'E002',name:'李小華'},{id:'E003',name:'張美玲'},
+  {id:'E004',name:'陳建國'},{id:'E005',name:'林淑芬'},{id:'E006',name:'吳志遠'},
+];
+
+// Balances (in-memory, mutable)
+const BAL = {
+  ai: {
+    unallocated: 26850,
+    divisions:   { '第一處':4400,'第二處':5800,'第三處':2900,'第四處':6400,'第五處':1450,'第六處':5900 },
+    departments: { '資訊部':2200,'企劃部':1200,'業務部':1500,'行政部':900 },
+  },
+  vm: {
+    unallocated: 16500,
+    divisions:   { '第一處':3300,'第二處':2400,'第三處':2300,'第四處':4200,'第五處':1000,'第六處':3300 },
+    departments: { '資訊部':1100,'企劃部':800,'業務部':500,'行政部':0 },
+  },
+};
+
+// Transaction log
+let txLog = [
+  { id:'T1001', date:'2025-06-10 09:23', type:'alloc-div',      wallet:'ai', amount:2000, from:'系統管理員', to:'第一處',  note:'',                      status:'completed' },
+  { id:'T1002', date:'2025-06-18 14:08', type:'alloc-dept',     wallet:'ai', amount:1500, from:'處管理員',   to:'資訊部, 企劃部', note:'Q2 補充分配',   status:'completed' },
+  { id:'T1003', date:'2025-06-25 11:30', type:'borrow',         wallet:'vm', amount:300,  from:'部管理員',   to:'企劃部',  note:'Q3 專案借調',           status:'completed' },
+  { id:'T1004', date:'2025-07-01 10:05', type:'budget-req',     wallet:'ai', amount:1500, from:'處管理員',   to:'—',       note:'WBS: 2025-IT-003 系統升級補充經費', wbs:'2025-IT-003', status:'pending' },
+  { id:'T1005', date:'2025-07-05 16:20', type:'alloc-personal', wallet:'vm', amount:200,  from:'部管理員',   to:'王大明, 李小華', note:'個人配額補充', status:'completed' },
+];
+let nextId = 1006;
+
+// ── Type/Status labels ──
+const TYPE_LABEL = { 'alloc-div':'存入處錢包','alloc-dept':'存入部錢包','alloc-personal':'存入個人錢包','borrow':'借調','repay':'歸還','budget-req':'追加預算申請' };
+const STATUS_HTML = {
+  completed: '<span class="status-badge badge-completed">已完成</span>',
+  pending:   '<span class="status-badge badge-pending">待審核</span>',
+  approved:  '<span class="status-badge badge-approved">已核准</span>',
+  rejected:  '<span class="status-badge badge-rejected">已拒絕</span>',
+  failed:    '<span class="status-badge badge-failed">餘額不足</span>',
+};
+
+// ── Utils ──
+function fmt(n){return Number(n).toLocaleString('zh-TW')}
+function pct(n,d){return d?Math.round(n/d*100):0}
+function balClass(b,t){const p=b/t;return p<.1?'balance-neg':p<.3?'balance-low':'balance-pos'}
+function nowStr(){const d=new Date();return d.toLocaleDateString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit'}).replace(/\//g,'-')+' '+d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'})}
+function addTx(obj){txLog.unshift({id:'T'+nextId++,date:nowStr(),...obj})}
+function toast(msg,type='info'){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast toast-'+type+' show';
+  setTimeout(()=>t.className='toast',2500);
+}
+
+// ── Role switch ──
+function switchRole(r){
+  activeRole=r;
+  document.querySelectorAll('.role-btn').forEach(b=>b.classList.toggle('active',b.dataset.role===r));
+  const rd=ROLES[r];
+  document.getElementById('roleBar').style.background=rd.barBg;
+  document.getElementById('roleScope').textContent=rd.scope;
+  document.getElementById('headerSub').textContent=rd.subtitle;
+  document.getElementById('sectionBLabel').textContent=rd.sectionB;
+  document.getElementById('tableTitle').textContent=rd.tableTitle;
+  document.getElementById('colUnit').textContent=rd.unitLabel;
+  document.getElementById('colSpent').textContent=rd.spentCol;
+  renderActionBar();render();
+}
+
+// ── Wallet switch ──
+function switchWallet(w){
+  activeWallet=w;
+  document.querySelectorAll('.wallet-tab').forEach(t=>t.classList.toggle('active',t.dataset.wallet===w));
+  html.style.setProperty('--wallet-accent',WALLETS[w].accent);
+  html.style.setProperty('--wallet-accent-bg',WALLETS[w].accentBg);
+  renderActionBar();render();
+}
+
+// ── View switch ──
+function switchView(v){
+  activeView=v;
+  document.querySelectorAll('.view-tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));
+  document.querySelectorAll('.view-panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+v));
+  document.getElementById('actionBar').classList.toggle('hidden',v!=='alloc');
+  if(v==='alloc')renderAlloc();
+  else if(v==='mgmt')renderBill();
+  else renderLedger();
+}
+
+// ── Action bar ──
+function renderActionBar(){
+  const bar=document.getElementById('actionBar');
+  const b=BAL[activeWallet];
+  let balLabel='', btns='';
+  if(activeRole==='sys'){
+    balLabel=`可用餘額：<span class="abn">${fmt(b.unallocated)}</span> 萬元`;
+    btns=`<button class="action-btn ab-primary" onclick="openModal('alloc-div')">＋ 存入處錢包</button>`;
+  } else if(activeRole==='div'){
+    balLabel=`第二處 可用餘額：<span class="abn">${fmt(b.divisions['第二處'])}</span> 萬元`;
+    btns=`<button class="action-btn ab-primary" onclick="openModal('alloc-dept')">＋ 存入部錢包</button>
+          <button class="action-btn ab-outline" onclick="openModal('budget-req')">追加預算申請</button>`;
+  } else {
+    balLabel=`資訊部 可用餘額：<span class="abn">${fmt(b.departments['資訊部'])}</span> 萬元`;
+    btns=`<button class="action-btn ab-primary" onclick="openModal('alloc-personal')">＋ 存入個人錢包</button>
+          <button class="action-btn ab-outline" onclick="openModal('borrow')">借調 / 歸還</button>`;
+  }
+  bar.innerHTML=`<span class="ab-label">快速操作</span><div class="ab-sep"></div>${btns}<div class="ab-balance">${balLabel}</div>`;
+}
+
+// ── Modal ──
+function openModal(type){
+  const body=document.getElementById('modalBody');
+  const title=document.getElementById('modalTitle');
+  const footer=document.getElementById('modalFooter');
+  const b=BAL[activeWallet];
+
+  if(type==='alloc-div'){
+    title.textContent='存入處錢包';
+    body.innerHTML=`
+      <div class="modal-balance"><span class="modal-balance-label">系統可用餘額</span><span class="modal-balance-val">${fmt(b.unallocated)} 萬元（${activeWallet.toUpperCase()} 錢包）</span></div>
+      <div class="form-group"><label class="form-label">目標處別</label>
+        <select class="form-select" id="f-div">${DIVISIONS.map(d=>`<option>${d}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">存入金額（萬元）</label>
+        <input class="form-input" type="number" id="f-amount" placeholder="例：500" min="1"></div>
+      <div class="form-warn" id="f-warn">餘額不足，請調整金額。</div>`;
+    footer.innerHTML=`<button class="btn btn-cancel" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="submitAllocDiv()">確認存入</button>`;
+  }
+  else if(type==='alloc-dept'){
+    title.textContent='存入部錢包';
+    body.innerHTML=`
+      <div class="modal-balance"><span class="modal-balance-label">第二處 可用餘額</span><span class="modal-balance-val">${fmt(b.divisions['第二處'])} 萬元（${activeWallet.toUpperCase()} 錢包）</span></div>
+      <div class="form-hint">可一次分配給多個部門，總額不得超過可用餘額。</div>
+      <div class="multi-rows" id="deptRows">
+        <div class="multi-row">
+          <select class="form-select">${DEPARTMENTS.map(d=>`<option>${d}</option>`).join('')}</select>
+          <input class="form-input" type="number" placeholder="金額（萬）" min="1" style="max-width:120px">
+          <button class="multi-row-del" onclick="removeRow(this)">✕</button>
+        </div>
+      </div>
+      <button class="add-row-btn" onclick="addDeptRow()">＋ 新增部門</button>
+      <div class="form-warn" id="f-warn">總額超過可用餘額，請調整。</div>`;
+    footer.innerHTML=`<button class="btn btn-cancel" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="submitAllocDept()">確認存入</button>`;
+  }
+  else if(type==='alloc-personal'){
+    title.textContent='存入個人錢包';
+    body.innerHTML=`
+      <div class="modal-balance"><span class="modal-balance-label">資訊部 可用餘額</span><span class="modal-balance-val">${fmt(b.departments['資訊部'])} 萬元（${activeWallet.toUpperCase()} 錢包）</span></div>
+      <div class="form-hint">可一次分配給多位員工，總額不得超過可用餘額。</div>
+      <div class="multi-rows" id="personalRows">
+        <div class="multi-row">
+          <select class="form-select">${EMPLOYEES.map(e=>`<option value="${e.id}">${e.name}（${e.id}）</option>`).join('')}</select>
+          <input class="form-input" type="number" placeholder="金額（萬）" min="1" style="max-width:110px">
+          <button class="multi-row-del" onclick="removeRow(this)">✕</button>
+        </div>
+      </div>
+      <button class="add-row-btn" onclick="addPersonalRow()">＋ 新增員工</button>
+      <div class="form-warn" id="f-warn">總額超過可用餘額，請調整。</div>`;
+    footer.innerHTML=`<button class="btn btn-cancel" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="submitAllocPersonal()">確認存入</button>`;
+  }
+  else if(type==='borrow'){
+    title.textContent='借調 / 歸還';
+    const otherDepts = DEPARTMENTS.filter(d=>d!=='資訊部');
+    body.innerHTML=`
+      <div class="modal-tabs">
+        <button class="modal-tab-btn active" id="tabBorrow" onclick="setBorrowTab('borrow')">借調</button>
+        <button class="modal-tab-btn" id="tabRepay" onclick="setBorrowTab('repay')">歸還</button>
+      </div>
+      <div id="borrowDesc" class="form-hint">向其他部門借調點數。系統會先確認對方餘額充足，才會發起流程。</div>
+      <div class="modal-balance" id="borrowBalBox">
+        <span class="modal-balance-label" id="borrowBalLbl">借調來源（對方餘額）</span>
+        <span class="modal-balance-val" id="borrowBalVal">—</span>
+      </div>
+      <div class="form-group"><label class="form-label" id="borrowTargetLbl">目標部門</label>
+        <select class="form-select" id="f-borrow-target" onchange="updateBorrowBal()">${otherDepts.map(d=>`<option>${d}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">金額（萬元）</label>
+        <input class="form-input" type="number" id="f-borrow-amount" placeholder="例：100" min="1"></div>
+      <div class="form-warn" id="f-warn"></div>`;
+    footer.innerHTML=`<button class="btn btn-cancel" onclick="closeModal()">取消</button><button class="btn btn-primary" id="borrowSubmitBtn" onclick="submitBorrow()">確認借調</button>`;
+    updateBorrowBal();
+  }
+  else if(type==='budget-req'){
+    title.textContent='追加預算申請';
+    body.innerHTML=`
+      <div class="form-hint">填寫 WBS 代碼與申請金額，送出後由系統管理員審核。</div>
+      <div class="form-group"><label class="form-label">WBS Code</label>
+        <input class="form-input" type="text" id="f-wbs" placeholder="例：2025-IT-004"></div>
+      <div class="form-group"><label class="form-label">申請金額（萬元）</label>
+        <input class="form-input" type="number" id="f-wbs-amount" placeholder="例：800" min="1"></div>
+      <div class="form-group"><label class="form-label">說明事由</label>
+        <textarea class="form-textarea" id="f-wbs-note" placeholder="請說明追加預算用途…"></textarea></div>
+      <div class="form-group"><label class="form-label">錢包</label>
+        <select class="form-select" id="f-wbs-wallet">
+          <option value="ai">AI 錢包</option><option value="vm">VM 錢包</option>
+        </select></div>`;
+    footer.innerHTML=`<button class="btn btn-cancel" onclick="closeModal()">取消</button><button class="btn btn-primary" onclick="submitBudgetReq()">送出申請</button>`;
+  }
+
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open')}
+function closeModalOutside(e){if(e.target===document.getElementById('modalOverlay'))closeModal()}
+
+// ── Modal helpers ──
+function addDeptRow(){
+  const c=document.getElementById('deptRows');
+  const div=document.createElement('div');div.className='multi-row';
+  div.innerHTML=`<select class="form-select">${DEPARTMENTS.map(d=>`<option>${d}</option>`).join('')}</select><input class="form-input" type="number" placeholder="金額（萬）" min="1" style="max-width:120px"><button class="multi-row-del" onclick="removeRow(this)">✕</button>`;
+  c.appendChild(div);
+}
+function addPersonalRow(){
+  const c=document.getElementById('personalRows');
+  const div=document.createElement('div');div.className='multi-row';
+  div.innerHTML=`<select class="form-select">${EMPLOYEES.map(e=>`<option value="${e.id}">${e.name}（${e.id}）</option>`).join('')}</select><input class="form-input" type="number" placeholder="金額（萬）" min="1" style="max-width:110px"><button class="multi-row-del" onclick="removeRow(this)">✕</button>`;
+  c.appendChild(div);
+}
+function removeRow(btn){
+  const rows=btn.closest('.multi-rows');
+  if(rows.children.length>1)btn.closest('.multi-row').remove();
+}
+
+let borrowMode='borrow';
+function setBorrowTab(mode){
+  borrowMode=mode;
+  document.getElementById('tabBorrow').classList.toggle('active',mode==='borrow');
+  document.getElementById('tabRepay').classList.toggle('active',mode==='repay');
+  const b=BAL[activeWallet];
+  if(mode==='borrow'){
+    document.getElementById('borrowDesc').textContent='向其他部門借調點數。系統會先確認對方餘額充足，才會發起流程。';
+    document.getElementById('borrowBalLbl').textContent='借調來源（對方餘額）';
+    document.getElementById('borrowTargetLbl').textContent='目標部門';
+    document.getElementById('borrowSubmitBtn').textContent='確認借調';
+  } else {
+    document.getElementById('borrowDesc').textContent='歸還先前借調的點數。系統會先確認自身餘額充足，才會發起流程。';
+    document.getElementById('borrowBalLbl').textContent='自身可用餘額（資訊部）';
+    document.getElementById('borrowBalVal').textContent=fmt(b.departments['資訊部'])+' 萬元';
+    document.getElementById('borrowTargetLbl').textContent='歸還目標部門';
+    document.getElementById('borrowSubmitBtn').textContent='確認歸還';
+  }
+  document.getElementById('f-warn').className='form-warn';
+  if(mode==='borrow')updateBorrowBal();
+}
+function updateBorrowBal(){
+  if(borrowMode!=='borrow')return;
+  const t=document.getElementById('f-borrow-target');
+  if(!t)return;
+  const b=BAL[activeWallet].departments[t.value];
+  document.getElementById('borrowBalVal').textContent=fmt(b)+' 萬元（'+activeWallet.toUpperCase()+'）';
+}
+
+// ── Submit handlers ──
+function submitAllocDiv(){
+  const div=document.getElementById('f-div').value;
+  const amt=parseInt(document.getElementById('f-amount').value)||0;
+  const warn=document.getElementById('f-warn');
+  const b=BAL[activeWallet];
+  if(amt<=0){warn.textContent='請輸入有效金額。';warn.className='form-warn show';return}
+  if(amt>b.unallocated){warn.className='form-warn show';return}
+  b.unallocated-=amt;
+  b.divisions[div]=(b.divisions[div]||0)+amt;
+  addTx({type:'alloc-div',wallet:activeWallet,amount:amt,from:'系統管理員',to:div,note:'',status:'completed'});
+  closeModal();renderActionBar();renderAlloc();renderLedger();
+  toast(`已成功存入 ${fmt(amt)} 萬元至 ${div} 錢包`,'success');
+}
+
+function submitAllocDept(){
+  const rows=[...document.getElementById('deptRows').querySelectorAll('.multi-row')];
+  const entries=rows.map(r=>({dept:r.querySelector('select').value,amt:parseInt(r.querySelector('input').value)||0}));
+  const total=entries.reduce((s,e)=>s+e.amt,0);
+  const warn=document.getElementById('f-warn');
+  const avail=BAL[activeWallet].divisions['第二處'];
+  if(entries.some(e=>e.amt<=0)){warn.textContent='請填寫所有行的金額。';warn.className='form-warn show';return}
+  if(total>avail){warn.textContent=`總額 ${fmt(total)} 萬超過可用餘額 ${fmt(avail)} 萬，請調整。`;warn.className='form-warn show';return}
+  BAL[activeWallet].divisions['第二處']-=total;
+  entries.forEach(e=>{BAL[activeWallet].departments[e.dept]=(BAL[activeWallet].departments[e.dept]||0)+e.amt});
+  const toStr=entries.map(e=>e.dept).join(', ');
+  addTx({type:'alloc-dept',wallet:activeWallet,amount:total,from:'處管理員',to:toStr,note:entries.map(e=>e.dept+' '+fmt(e.amt)+'萬').join('；'),status:'completed'});
+  closeModal();renderActionBar();renderAlloc();renderLedger();
+  toast(`已成功存入合計 ${fmt(total)} 萬元至 ${entries.length} 個部門`,'success');
+}
+
+function submitAllocPersonal(){
+  const rows=[...document.getElementById('personalRows').querySelectorAll('.multi-row')];
+  const entries=rows.map(r=>{const sel=r.querySelector('select');return{name:sel.options[sel.selectedIndex].text.split('（')[0],amt:parseInt(r.querySelector('input').value)||0}});
+  const total=entries.reduce((s,e)=>s+e.amt,0);
+  const warn=document.getElementById('f-warn');
+  const avail=BAL[activeWallet].departments['資訊部'];
+  if(entries.some(e=>e.amt<=0)){warn.textContent='請填寫所有行的金額。';warn.className='form-warn show';return}
+  if(total>avail){warn.textContent=`總額 ${fmt(total)} 萬超過可用餘額 ${fmt(avail)} 萬。`;warn.className='form-warn show';return}
+  BAL[activeWallet].departments['資訊部']-=total;
+  const toStr=entries.map(e=>e.name).join(', ');
+  addTx({type:'alloc-personal',wallet:activeWallet,amount:total,from:'部管理員',to:toStr,note:'',status:'completed'});
+  closeModal();renderActionBar();renderAlloc();renderLedger();
+  toast(`已成功存入合計 ${fmt(total)} 萬元至 ${entries.length} 位員工`,'success');
+}
+
+function submitBorrow(){
+  const target=document.getElementById('f-borrow-target').value;
+  const amt=parseInt(document.getElementById('f-borrow-amount').value)||0;
+  const warn=document.getElementById('f-warn');
+  const b=BAL[activeWallet];
+  if(amt<=0){warn.textContent='請輸入有效金額。';warn.className='form-warn show';return}
+  if(borrowMode==='borrow'){
+    const targetBal=b.departments[target]||0;
+    if(amt>targetBal){
+      warn.textContent=`${target} 餘額 ${fmt(targetBal)} 萬元不足，無法借調。`;warn.className='form-warn show';
+      addTx({type:'borrow',wallet:activeWallet,amount:amt,from:'部管理員',to:target,note:'餘額不足',status:'failed'});
+      renderLedger();return;
+    }
+    b.departments[target]-=amt;
+    b.departments['資訊部']=(b.departments['資訊部']||0)+amt;
+    addTx({type:'borrow',wallet:activeWallet,amount:amt,from:'部管理員',to:target,note:'',status:'completed'});
+    closeModal();renderActionBar();renderAlloc();renderLedger();
+    toast(`已從 ${target} 借調 ${fmt(amt)} 萬元`,'success');
+  } else {
+    const selfBal=b.departments['資訊部']||0;
+    if(amt>selfBal){
+      warn.textContent=`資訊部餘額 ${fmt(selfBal)} 萬元不足，無法歸還。`;warn.className='form-warn show';
+      addTx({type:'repay',wallet:activeWallet,amount:amt,from:'部管理員',to:target,note:'餘額不足',status:'failed'});
+      renderLedger();return;
+    }
+    b.departments['資訊部']-=amt;
+    b.departments[target]=(b.departments[target]||0)+amt;
+    addTx({type:'repay',wallet:activeWallet,amount:amt,from:'部管理員',to:target,note:'',status:'completed'});
+    closeModal();renderActionBar();renderAlloc();renderLedger();
+    toast(`已歸還 ${fmt(amt)} 萬元至 ${target}`,'success');
+  }
+}
+
+function submitBudgetReq(){
+  const wbs=document.getElementById('f-wbs').value.trim();
+  const amt=parseInt(document.getElementById('f-wbs-amount').value)||0;
+  const note=document.getElementById('f-wbs-note').value.trim();
+  const wallet=document.getElementById('f-wbs-wallet').value;
+  if(!wbs){toast('請填寫 WBS Code','error');return}
+  if(amt<=0){toast('請填寫有效申請金額','error');return}
+  addTx({type:'budget-req',wallet,amount:amt,from:'處管理員',to:'—',note:`WBS: ${wbs}${note?' / '+note:''}`,wbs,status:'pending'});
+  closeModal();renderLedger();
+  toast('追加預算申請已送出，待系統管理員審核','info');
+}
+
+// Approve/reject budget request
+function approveTx(id){
+  const tx=txLog.find(t=>t.id===id);
+  if(!tx||tx.status!=='pending')return;
+  tx.status='approved';
+  BAL[tx.wallet].unallocated=(BAL[tx.wallet].unallocated||0)+tx.amount;
+  renderLedger();renderActionBar();
+  toast(`已核准追加預算申請 ${tx.id}，${fmt(tx.amount)} 萬元已存入系統`,'success');
+}
+function rejectTx(id){
+  const tx=txLog.find(t=>t.id===id);
+  if(!tx||tx.status!=='pending')return;
+  tx.status='rejected';
+  renderLedger();
+  toast(`已拒絕申請 ${tx.id}`,'error');
+}
+
+// ── Ledger action shortcut ──
+function openLedgerAction(){
+  if(activeRole==='sys')toast('系統管理員可於下方審核待核准申請','info');
+  else if(activeRole==='div')openModal('budget-req');
+  else openModal('borrow');
+}
+
+// ── Render alloc (static data for display) ──
+const ALLOC_DATA = {
+  sys:{ ai:{
+    2025:[{name:'第一處',budget:18000,approved:1200,pending:500,spent:14800},{name:'第二處',budget:22000,approved:2000,pending:0,spent:18200},{name:'第三處',budget:14000,approved:800,pending:600,spent:11900},{name:'第四處',budget:16000,approved:600,pending:400,spent:10200},{name:'第五處',budget:9000,approved:500,pending:0,spent:8050},{name:'第六處',budget:6000,approved:200,pending:0,spent:300}],
+    2024:[{name:'第一處',budget:16000,approved:900,pending:0,spent:16200},{name:'第二處',budget:20000,approved:1500,pending:0,spent:19800},{name:'第三處',budget:12000,approved:600,pending:0,spent:11500},{name:'第四處',budget:14000,approved:400,pending:0,spent:13200},{name:'第五處',budget:8000,approved:300,pending:0,spent:7600},{name:'第六處',budget:5000,approved:100,pending:0,spent:4900}],
+    2023:[{name:'第一處',budget:15000,approved:700,pending:0,spent:15200},{name:'第二處',budget:18000,approved:1200,pending:0,spent:17800},{name:'第三處',budget:11000,approved:500,pending:0,spent:10900},{name:'第四處',budget:13000,approved:300,pending:0,spent:12800},{name:'第五處',budget:7500,approved:200,pending:0,spent:7400},{name:'第六處',budget:4500,approved:50,pending:0,spent:4300}]},
+  vm:{
+    2025:[{name:'第一處',budget:12000,approved:800,pending:300,spent:9500},{name:'第二處',budget:15000,approved:1200,pending:0,spent:13800},{name:'第三處',budget:9000,approved:500,pending:200,spent:7200},{name:'第四處',budget:10000,approved:300,pending:0,spent:6100},{name:'第五處',budget:6000,approved:200,pending:0,spent:5200},{name:'第六處',budget:4000,approved:100,pending:0,spent:800}],
+    2024:[{name:'第一處',budget:11000,approved:600,pending:0,spent:10800},{name:'第二處',budget:13000,approved:1000,pending:0,spent:12900},{name:'第三處',budget:8000,approved:400,pending:0,spent:7700},{name:'第四處',budget:9000,approved:200,pending:0,spent:8600},{name:'第五處',budget:5500,approved:100,pending:0,spent:5000},{name:'第六處',budget:3500,approved:50,pending:0,spent:3200}],
+    2023:[{name:'第一處',budget:10000,approved:500,pending:0,spent:9800},{name:'第二處',budget:12000,approved:800,pending:0,spent:11600},{name:'第三處',budget:7000,approved:300,pending:0,spent:6800},{name:'第四處',budget:8000,approved:150,pending:0,spent:7900},{name:'第五處',budget:5000,approved:80,pending:0,spent:4700},{name:'第六處',budget:3000,approved:30,pending:0,spent:2800}]}},
+  div:{ ai:{
+    2025:[{name:'資訊部',budget:8000,approved:600,pending:200,spent:6400},{name:'企劃部',budget:6500,approved:500,pending:0,spent:5800},{name:'業務部',budget:5000,approved:400,pending:0,spent:3900},{name:'行政部',budget:2500,approved:500,pending:0,spent:2100}],
+    2024:[{name:'資訊部',budget:7000,approved:500,pending:0,spent:6800},{name:'企劃部',budget:6000,approved:400,pending:0,spent:5700},{name:'業務部',budget:4500,approved:300,pending:0,spent:4200},{name:'行政部',budget:2500,approved:200,pending:0,spent:2300}],
+    2023:[{name:'資訊部',budget:6500,approved:400,pending:0,spent:6300},{name:'企劃部',budget:5500,approved:300,pending:0,spent:5200},{name:'業務部',budget:4000,approved:200,pending:0,spent:3800},{name:'行政部',budget:2000,approved:100,pending:0,spent:1900}]},
+  vm:{
+    2025:[{name:'資訊部',budget:5500,approved:400,pending:100,spent:4800},{name:'企劃部',budget:4000,approved:300,pending:0,spent:3500},{name:'業務部',budget:3200,approved:200,pending:0,spent:2900},{name:'行政部',budget:2300,approved:300,pending:0,spent:2600}],
+    2024:[{name:'資訊部',budget:5000,approved:300,pending:0,spent:4700},{name:'企劃部',budget:3500,approved:200,pending:0,spent:3300},{name:'業務部',budget:2800,approved:150,pending:0,spent:2600},{name:'行政部',budget:2000,approved:100,pending:0,spent:1900}],
+    2023:[{name:'資訊部',budget:4500,approved:250,pending:0,spent:4200},{name:'企劃部',budget:3000,approved:150,pending:0,spent:2900},{name:'業務部',budget:2500,approved:100,pending:0,spent:2400},{name:'行政部',budget:1800,approved:80,pending:0,spent:1700}]}},
+  dept:{ ai:{
+    2025:[{name:'系統科',budget:3200,approved:250,pending:100,spent:2600},{name:'網路科',budget:2800,approved:200,pending:0,spent:2300},{name:'資安科',budget:2000,approved:150,pending:0,spent:1500}],
+    2024:[{name:'系統科',budget:2800,approved:200,pending:0,spent:2700},{name:'網路科',budget:2500,approved:150,pending:0,spent:2400},{name:'資安科',budget:1700,approved:100,pending:0,spent:1600}],
+    2023:[{name:'系統科',budget:2500,approved:150,pending:0,spent:2400},{name:'網路科',budget:2200,approved:100,pending:0,spent:2100},{name:'資安科',budget:1800,approved:80,pending:0,spent:1700}]},
+  vm:{
+    2025:[{name:'系統科',budget:2200,approved:150,pending:50,spent:1900},{name:'網路科',budget:2000,approved:150,pending:0,spent:1800},{name:'資安科',budget:1300,approved:100,pending:0,spent:1100}],
+    2024:[{name:'系統科',budget:1900,approved:120,pending:0,spent:1800},{name:'網路科',budget:1800,approved:100,pending:0,spent:1700},{name:'資安科',budget:1300,approved:80,pending:0,spent:1200}],
+    2023:[{name:'系統科',budget:1700,approved:100,pending:0,spent:1600},{name:'網路科',budget:1600,approved:80,pending:0,spent:1500},{name:'資安科',budget:1200,approved:60,pending:0,spent:1100}]}}
+};
+
+function renderAlloc(){
+  const year=parseInt(document.getElementById('yearFilter').value);
+  const rows=((ALLOC_DATA[activeRole]||{})[activeWallet]||{})[year]||[];
+  const accent=WALLETS[activeWallet].accent;
+  const tB=rows.reduce((s,r)=>s+r.budget,0),tA=rows.reduce((s,r)=>s+r.approved,0),tP=rows.reduce((s,r)=>s+r.pending,0),tS=rows.reduce((s,r)=>s+r.spent,0);
+  const grand=tB+tA,unalloc=grand-tS,p1=pct(tB,grand),u1=pct(tS,grand);
+
+  document.getElementById('barSource').innerHTML=`<div class="bar-seg" style="background:${accent};flex:${p1}"><div class="bar-seg-label"><span class="bar-seg-name">① 年度總額</span><span class="bar-seg-val">${fmt(tB)}</span></div></div><div class="bar-seg" style="background:${accent}55;flex:${100-p1}"><div class="bar-seg-label" style="color:${accent}"><span class="bar-seg-name" style="color:${accent}">② 累積追加</span><span class="bar-seg-val" style="color:${accent}">${fmt(tA)}</span></div></div>`;
+  document.getElementById('barUse').innerHTML=`<div class="bar-seg" style="background:var(--purple);flex:${u1}"><div class="bar-seg-label"><span class="bar-seg-name">③ 已分配</span><span class="bar-seg-val">${fmt(tS)}</span></div></div><div class="bar-seg" style="background:var(--good);flex:${100-u1}"><div class="bar-seg-label"><span class="bar-seg-name">④ 未分配</span><span class="bar-seg-val">${fmt(unalloc)}</span></div></div>`;
+  document.getElementById('legendA').innerHTML=[[accent,'① 年度總額'],[accent+'55','② 累積追加'],['var(--purple)','③ 已分配'],['var(--good)','④ 未分配餘額']].map(([c,l])=>`<div class="legend-item"><span class="legend-swatch" style="background:${c}"></span>${l}</div>`).join('');
+  document.getElementById('statsA').innerHTML=`<div class="stat-item"><div class="stat-index">① 年度總額</div><div class="stat-label">年度核定預算</div><div class="stat-val">${fmt(tB)}<span class="stat-unit"> 萬元</span></div></div><div class="stat-item"><div class="stat-index">② 累積追加核准</div><div class="stat-label">歷次追加</div><div class="stat-val">${fmt(tA)}<span class="stat-unit"> 萬元</span></div>${tP>0?`<span class="stat-badge" style="background:var(--warn-bg);color:var(--warn)">⏳ 待核准 ${fmt(tP)} 萬</span>`:''}</div><div class="stat-item"><div class="stat-index">③ 已分配</div><div class="stat-label">累計下發</div><div class="stat-val">${fmt(tS)}<span class="stat-unit"> 萬元</span></div><span class="stat-badge" style="background:var(--accent-bg);color:var(--accent)">${pct(tS,grand)}% 已動用</span></div><div class="stat-item"><div class="stat-index">④ 未分配餘額</div><div class="stat-label">尚可動用</div><div class="stat-val">${fmt(unalloc)}<span class="stat-unit"> 萬元</span></div><span class="stat-badge" style="background:var(--good-bg);color:var(--good)">可動用</span></div>`;
+
+  const maxT=Math.max(...rows.map(r=>r.budget+r.approved));
+  document.getElementById('divChart').innerHTML=rows.map((r,i)=>{const t=r.budget+r.approved,rem=t-r.spent,sw=pct(r.spent,t),bw=pct(t,maxT),c=DIV_COLORS[i];return`<div class="div-row"><div class="div-name">${r.name}</div><div class="div-bar-wrap" style="max-width:${bw}%"><div class="div-bar-seg" style="background:${c};flex:${sw}">${sw>15?`<span>${fmt(r.spent)}</span>`:''}</div><div class="div-bar-seg" style="background:${c}35;flex:${100-sw}">${(100-sw)>10?`<span style="color:${c}">${fmt(rem)}</span>`:''}</div></div><div class="div-pct" style="color:${sw>90?'var(--warn)':sw>70?'var(--text-2)':'var(--good)'}">${sw}%</div></div>`}).join('');
+  document.getElementById('legendB').innerHTML=`<div class="legend-item" style="font-size:.67rem;color:var(--text-2)"><span class="legend-swatch" style="background:var(--text-2)"></span>深色 = 已下發</div><div class="legend-item" style="font-size:.67rem;color:var(--text-2)"><span class="legend-swatch" style="background:var(--border)"></span>淺色 = 餘額</div><span style="font-size:.67rem;color:var(--text-3)">% = 使用率</span>`;
+  document.getElementById('statsB').innerHTML=`<div class="stat-item"><div class="stat-index">① 年度總預算</div><div class="stat-label">核定分配</div><div class="stat-val">${fmt(tB)}<span class="stat-unit"> 萬元</span></div></div><div class="stat-item"><div class="stat-index">② 累積追加</div><div class="stat-label">已核准追加</div><div class="stat-val">${fmt(tA)}<span class="stat-unit"> 萬元</span></div>${tP>0?`<span class="stat-badge" style="background:var(--warn-bg);color:var(--warn)">⏳ 待核准 ${fmt(tP)} 萬</span>`:''}</div><div class="stat-item"><div class="stat-index">③ 已下發</div><div class="stat-label">實際撥付</div><div class="stat-val">${fmt(tS)}<span class="stat-unit"> 萬元</span></div><span class="stat-badge" style="background:var(--accent-bg);color:var(--accent)">${pct(tS,grand)}% 執行率</span></div><div class="stat-item"><div class="stat-index">④ 剩餘總額</div><div class="stat-label">尚未使用</div><div class="stat-val">${fmt(grand-tS)}<span class="stat-unit"> 萬元</span></div><span class="stat-badge" style="background:var(--good-bg);color:var(--good)">餘額健全</span></div>`;
+
+  let tBdg=0,tAp=0,tPd=0,tSp=0;
+  document.getElementById('tableBody').innerHTML=rows.map((r,i)=>{const t=r.budget+r.approved,b=t-r.spent;tBdg+=r.budget;tAp+=r.approved;tPd+=r.pending;tSp+=r.spent;return`<tr><td><span class="dept-pill"><span class="dept-dot" style="background:${DIV_COLORS[i]}"></span>${r.name}</span></td><td class="num">${fmt(r.budget)}</td><td class="num">${fmt(r.approved)}${r.pending?`<span class="pending-tag">+${fmt(r.pending)} 待審</span>`:''}</td><td class="num">${fmt(r.spent)}</td><td class="num ${balClass(b,t)}">${fmt(b)}</td></tr>`}).join('');
+  const tBal=tBdg+tAp-tSp;
+  document.getElementById('tableFoot').innerHTML=`<tr class="tfoot-row"><td>合計</td><td class="num">${fmt(tBdg)}</td><td class="num">${fmt(tAp)}${tPd?`<span class="pending-tag">+${fmt(tPd)} 待審</span>`:''}</td><td class="num">${fmt(tSp)}</td><td class="num balance-pos">${fmt(tBal)}</td></tr>`;
+}
+
+// ── Render bill ──
+const BILL_DATA = {
+  ai:{2025:[{month:'2025 年 1 月',usage:'1,280 Token-hr',price:'NT$42/hr',amount:53760,status:'paid'},{month:'2025 年 2 月',usage:'1,150 Token-hr',price:'NT$42/hr',amount:48300,status:'paid'},{month:'2025 年 3 月',usage:'1,420 Token-hr',price:'NT$42/hr',amount:59640,status:'paid'},{month:'2025 年 4 月',usage:'1,680 Token-hr',price:'NT$42/hr',amount:70560,status:'paid'},{month:'2025 年 5 月',usage:'1,530 Token-hr',price:'NT$42/hr',amount:64260,status:'paid'},{month:'2025 年 6 月',usage:'1,740 Token-hr',price:'NT$42/hr',amount:73080,status:'paid'},{month:'2025 年 7 月',usage:'1,820 Token-hr',price:'NT$42/hr',amount:76440,status:'pending'},{month:'2025 年 8 月',usage:'—',price:'NT$42/hr',amount:0,status:'upcoming'},{month:'2025 年 9 月',usage:'—',price:'NT$42/hr',amount:0,status:'upcoming'},{month:'2025 年 10 月',usage:'—',price:'NT$42/hr',amount:0,status:'upcoming'},{month:'2025 年 11 月',usage:'—',price:'NT$42/hr',amount:0,status:'upcoming'},{month:'2025 年 12 月',usage:'—',price:'NT$42/hr',amount:0,status:'upcoming'}],2024:[{month:'2024 年 1 月',usage:'1,100 Token-hr',price:'NT$40/hr',amount:44000,status:'paid'},{month:'2024 年 2 月',usage:'980 Token-hr',price:'NT$40/hr',amount:39200,status:'paid'},{month:'2024 年 3 月',usage:'1,250 Token-hr',price:'NT$40/hr',amount:50000,status:'paid'},{month:'2024 年 4 月',usage:'1,380 Token-hr',price:'NT$40/hr',amount:55200,status:'paid'},{month:'2024 年 5 月',usage:'1,210 Token-hr',price:'NT$40/hr',amount:48400,status:'paid'},{month:'2024 年 6 月',usage:'1,320 Token-hr',price:'NT$40/hr',amount:52800,status:'paid'},{month:'2024 年 7 月',usage:'1,450 Token-hr',price:'NT$40/hr',amount:58000,status:'paid'},{month:'2024 年 8 月',usage:'1,390 Token-hr',price:'NT$40/hr',amount:55600,status:'paid'},{month:'2024 年 9 月',usage:'1,480 Token-hr',price:'NT$40/hr',amount:59200,status:'paid'},{month:'2024 年 10 月',usage:'1,560 Token-hr',price:'NT$40/hr',amount:62400,status:'paid'},{month:'2024 年 11 月',usage:'1,620 Token-hr',price:'NT$40/hr',amount:64800,status:'paid'},{month:'2024 年 12 月',usage:'1,700 Token-hr',price:'NT$40/hr',amount:68000,status:'paid'}]},
+  vm:{2025:[{month:'2025 年 1 月',usage:'640 vCPU-hr',price:'NT$28/hr',amount:17920,status:'paid'},{month:'2025 年 2 月',usage:'590 vCPU-hr',price:'NT$28/hr',amount:16520,status:'paid'},{month:'2025 年 3 月',usage:'710 vCPU-hr',price:'NT$28/hr',amount:19880,status:'paid'},{month:'2025 年 4 月',usage:'820 vCPU-hr',price:'NT$28/hr',amount:22960,status:'paid'},{month:'2025 年 5 月',usage:'780 vCPU-hr',price:'NT$28/hr',amount:21840,status:'paid'},{month:'2025 年 6 月',usage:'850 vCPU-hr',price:'NT$28/hr',amount:23800,status:'paid'},{month:'2025 年 7 月',usage:'900 vCPU-hr',price:'NT$28/hr',amount:25200,status:'pending'},{month:'2025 年 8 月',usage:'—',price:'NT$28/hr',amount:0,status:'upcoming'},{month:'2025 年 9 月',usage:'—',price:'NT$28/hr',amount:0,status:'upcoming'},{month:'2025 年 10 月',usage:'—',price:'NT$28/hr',amount:0,status:'upcoming'},{month:'2025 年 11 月',usage:'—',price:'NT$28/hr',amount:0,status:'upcoming'},{month:'2025 年 12 月',usage:'—',price:'NT$28/hr',amount:0,status:'upcoming'}],2024:[{month:'2024 年 1 月',usage:'520 vCPU-hr',price:'NT$26/hr',amount:13520,status:'paid'},{month:'2024 年 2 月',usage:'480 vCPU-hr',price:'NT$26/hr',amount:12480,status:'paid'},{month:'2024 年 3 月',usage:'610 vCPU-hr',price:'NT$26/hr',amount:15860,status:'paid'},{month:'2024 年 4 月',usage:'650 vCPU-hr',price:'NT$26/hr',amount:16900,status:'paid'},{month:'2024 年 5 月',usage:'620 vCPU-hr',price:'NT$26/hr',amount:16120,status:'paid'},{month:'2024 年 6 月',usage:'680 vCPU-hr',price:'NT$26/hr',amount:17680,status:'paid'},{month:'2024 年 7 月',usage:'720 vCPU-hr',price:'NT$26/hr',amount:18720,status:'paid'},{month:'2024 年 8 月',usage:'700 vCPU-hr',price:'NT$26/hr',amount:18200,status:'paid'},{month:'2024 年 9 月',usage:'730 vCPU-hr',price:'NT$26/hr',amount:18980,status:'paid'},{month:'2024 年 10 月',usage:'760 vCPU-hr',price:'NT$26/hr',amount:19760,status:'paid'},{month:'2024 年 11 月',usage:'790 vCPU-hr',price:'NT$26/hr',amount:20540,status:'paid'},{month:'2024 年 12 月',usage:'820 vCPU-hr',price:'NT$26/hr',amount:21320,status:'paid'}]}
+};
+function renderBill(){
+  const year=parseInt(document.getElementById('billYearFilter').value);
+  const rows=(BILL_DATA[activeWallet]||{})[year]||[];
+  const paid=rows.filter(r=>r.status==='paid'),pend=rows.filter(r=>r.status==='pending');
+  const tPaid=paid.reduce((s,r)=>s+r.amount,0),tPend=pend.reduce((s,r)=>s+r.amount,0);
+  const monthsLeft=rows.filter(r=>r.status==='upcoming').length;
+  const avg=paid.length?Math.round(tPaid/paid.length):0;
+  document.getElementById('billHeader').innerHTML=`<div class="bill-kpi"><div class="bill-kpi-label">年度累計帳單</div><div class="bill-kpi-val">NT$ ${fmt(tPaid)}</div><div class="bill-kpi-sub">共 ${paid.length} 個月已結帳</div></div><div class="bill-kpi"><div class="bill-kpi-label">待繳帳單</div><div class="bill-kpi-val" style="color:var(--warn)">NT$ ${fmt(tPend)}</div><div class="bill-kpi-sub">${pend.length>0?pend[0].month+' 待付款':'無待繳帳單'}</div></div><div class="bill-kpi"><div class="bill-kpi-label">月均費用</div><div class="bill-kpi-val">NT$ ${fmt(avg)}</div><div class="bill-kpi-sub">剩餘 ${monthsLeft} 個月未出帳</div></div>`;
+  const SM={paid:['status-paid','已結帳'],pending:['status-pending','待付款'],upcoming:['status-upcoming','未出帳']};
+  let cum=0;
+  document.getElementById('billBody').innerHTML=rows.map(r=>{if(r.amount)cum+=r.amount;const[cls,lbl]=SM[r.status];return`<tr><td>${r.month}</td><td class="num">${r.usage}</td><td class="num">${r.price}</td><td class="num">${r.amount?'NT$ '+fmt(r.amount):'—'}</td><td class="num" style="color:var(--text-2)">${cum?'NT$ '+fmt(cum):'—'}</td><td><span class="status-badge ${cls}">${lbl}</span></td></tr>`}).join('');
+  document.getElementById('billFoot').innerHTML=`<tr class="tfoot-row"><td>合計</td><td class="num">—</td><td class="num">—</td><td class="num">NT$ ${fmt(tPaid+tPend)}</td><td></td><td></td></tr>`;
+}
+
+// ── Render ledger ──
+function renderLedger(){
+  const typeF=document.getElementById('ledgerTypeFilter').value;
+  const statusF=document.getElementById('ledgerStatusFilter').value;
+  let rows=txLog.filter(t=>{
+    if(typeF&&t.type!==typeF)return false;
+    if(statusF&&t.status!==statusF)return false;
+    return true;
+  });
+  document.getElementById('ledgerBody').innerHTML=rows.length===0
+    ?`<tr><td colspan="9" style="text-align:center;color:var(--text-3);padding:24px;font-size:.8rem">目前無符合條件的單據</td></tr>`
+    :rows.map(t=>{
+      const canAct=activeRole==='sys'&&t.type==='budget-req'&&t.status==='pending';
+      const actBtns=canAct?`<div style="display:flex;gap:5px"><button class="btn-approve" onclick="approveTx('${t.id}')">核准</button><button class="btn-reject" onclick="rejectTx('${t.id}')">拒絕</button></div>`:t.wbs?`<span style="font-size:.65rem;color:var(--text-3)">${t.wbs}</span>`:'—';
+      return`<tr>
+        <td style="font-size:.72rem;color:var(--text-3);font-variant-numeric:tabular-nums">${t.id}</td>
+        <td style="font-size:.72rem;color:var(--text-3);white-space:nowrap">${t.date}</td>
+        <td><span style="font-size:.74rem;font-weight:600">${TYPE_LABEL[t.type]||t.type}</span></td>
+        <td><span style="font-size:.72rem;background:${t.wallet==='ai'?'var(--accent-bg)':'#F3EEFF'};color:${t.wallet==='ai'?'var(--accent)':'var(--purple)'};padding:2px 7px;border-radius:4px;font-weight:600">${t.wallet.toUpperCase()}</span></td>
+        <td class="num" style="font-weight:600">${fmt(t.amount)}</td>
+        <td style="font-size:.75rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.to}">${t.to}</td>
+        <td style="font-size:.72rem;color:var(--text-3);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.note}">${t.note||'—'}</td>
+        <td>${STATUS_HTML[t.status]||t.status}</td>
+        <td>${actBtns}</td>
+      </tr>`;
+    }).join('');
+}
+
+// ── Main render ──
+function render(){
+  if(activeView==='alloc')renderAlloc();
+  else if(activeView==='mgmt')renderBill();
+  else renderLedger();
+}
+
+// ── Init ──
+switchRole('sys');switchWallet('ai');
+</script>
