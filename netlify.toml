@@ -10,7 +10,7 @@
 # CI 只有 audit.yml(tsc + lint:imports + build)+ sync-design-system.yml(Dependabot/DS 版本同步)。
 
 [build]
-  command = "npm run build-storybook"
+  command = "npm run build-storybook && find apps -maxdepth 2 -name 'index.html' ! -path '*/node_modules/*' | while read f; do d=$(dirname $f); mkdir -p storybook-static/$d; cp $f storybook-static/$d/; done"
   publish = "storybook-static"
 
 [build.environment]
